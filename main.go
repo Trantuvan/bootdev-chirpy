@@ -9,9 +9,8 @@ import (
 func main() {
 	const port string = "8080"
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.NotFound(w, r)
-	})
+	mux.Handle("/", http.FileServer(http.Dir("./assets")))
+
 	server := http.Server{Addr: fmt.Sprintf(":%s", port), Handler: mux}
 
 	log.Printf("Servering on port: %s\n", port)
