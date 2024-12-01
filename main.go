@@ -4,10 +4,26 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync/atomic"
 )
+
+type apiConfig struct {
+	fileserverHits atomic.Int32
+}
+
+func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cfg.fileserverHits.Add(1)
+		w.Header().Add("Cache-Control", "no-cache")
+		w.WriteHeader(http.StatusOK)
+		next.ServeHTTP(w, r)
+	})
+}
 
 func main() {
 	const port string = "8080"
+	apiConfig := apiConfig{atomic.Int32{}}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", hanlderReadiness)
 	mux.HandleFunc("/metrics", apiConfig.handlerMetrics)
