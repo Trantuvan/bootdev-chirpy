@@ -42,3 +42,9 @@ func main() {
 	log.Printf("Servering on port: %s\n", port)
 	log.Fatalf("Server failed: %s", server.ListenAndServe())
 }
+
+func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("'Content-Type'", "'text/plain; charset=utf8'")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf("Hits: %d\n", cfg.fileserverHits.Load())))
+}
