@@ -9,12 +9,10 @@ import (
 func main() {
 	const port string = "8080"
 	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("'Content-Type'", "'text/plain; charset=utf8'")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(http.StatusText(http.StatusOK)))
-	})
-	mux.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir("."))))
+	mux.HandleFunc("/healthz", hanlderReadiness)
+	mux.HandleFunc("/metrics", apiConfig.handlerMetrics)
+	mux.HandleFunc("/reset", apiConfig.handlerReset)
+	mux.Handle("/app/", apiConfig.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
