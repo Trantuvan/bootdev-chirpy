@@ -2,7 +2,7 @@ package main
 
 import "net/http"
 
-func hanlderReadiness(w http.ResponseWriter, r *http.Request) {
+func handlerReadiness(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("'Content-Type'", "'text/plain; charset=utf8'")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(http.StatusText(http.StatusOK)))
