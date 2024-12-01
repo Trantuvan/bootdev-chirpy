@@ -30,13 +30,13 @@ func main() {
 	mux.HandleFunc("POST /reset", apiConfig.handlerReset)    // only POST
 
 	mux.Handle("/app/", apiConfig.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		fmt.Fprintf(w, "Welcome to the home page!\n")
-	})
+	// mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// 	if r.URL.Path != "/" {
+	// 		http.NotFound(w, r)
+	// 		return
+	// 	}
+	// 	fmt.Fprintf(w, "Welcome to the home page!\n")
+	// })
 
 	server := http.Server{Addr: fmt.Sprintf(":%s", port), Handler: mux}
 
