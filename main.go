@@ -21,6 +21,7 @@ func main() {
 	mux.HandleFunc("GET /admin/healthz", handlerReadiness)         // only GET
 	mux.HandleFunc("GET /admin/metrics", apiConfig.handlerMetrics) // only GET
 	mux.HandleFunc("POST /admin/reset", apiConfig.handlerReset)    // only POST
+	mux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
 
 	server := http.Server{Addr: fmt.Sprintf(":%s", port), Handler: mux}
 
