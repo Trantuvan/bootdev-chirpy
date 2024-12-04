@@ -18,10 +18,11 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/app/", apiConfig.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 
-	mux.HandleFunc("GET /admin/healthz", handlerReadiness)         // only GET
+	mux.HandleFunc("GET /api/healthz", handlerReadiness) // only GET
+	mux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
+
 	mux.HandleFunc("GET /admin/metrics", apiConfig.handlerMetrics) // only GET
 	mux.HandleFunc("POST /admin/reset", apiConfig.handlerReset)    // only POST
-	mux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
 
 	server := http.Server{Addr: fmt.Sprintf(":%s", port), Handler: mux}
 
