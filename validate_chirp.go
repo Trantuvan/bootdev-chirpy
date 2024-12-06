@@ -16,7 +16,11 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 		CleanedBody string `json:"cleaned_body"`
 	}
 	const maxChirpLength = 140
-	profaneWords := []string{"kerfuffle", "sharbert", "fornax"}
+	profaneWords := map[string]struct{}{
+		"kerfuffle": {},
+		"sharbert":  {},
+		"fornax":    {},
+	}
 
 	defer r.Body.Close()
 	decoder := json.NewDecoder(r.Body)
@@ -35,10 +39,8 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 	origins := strings.Split(params.Body, " ")
 
 	for i, w := range origins {
-		for _, pw := range profaneWords {
-			if strings.ToLower(w) == pw {
-				origins[i] = "****"
-			}
+		if _, ok := profaneWords[strings.ToLower(w)]; ok {
+			origins[i] = "****"
 		}
 	}
 
