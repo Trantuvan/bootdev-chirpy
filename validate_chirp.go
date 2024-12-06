@@ -8,16 +8,17 @@ import (
 )
 
 func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
-	const maxChirpLength = 140
-	params := struct {
+	type parameter struct {
 		Body string `json:"body"`
-	}{}
-	validResult := struct {
-		Valid bool `json:"valid"`
-	}{true}
+	}
+	type result struct {
+		CleanedBody string `json:"cleaned_body"`
+	}
+	const maxChirpLength = 140
 
 	defer r.Body.Close()
 	decoder := json.NewDecoder(r.Body)
+	params := parameter{}
 
 	if err := decoder.Decode(&params); err != nil {
 		helpers.ResponseWithError(w, http.StatusInternalServerError, "Validate Chirp: cannot parse json", err)
@@ -29,5 +30,5 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	helpers.ResponseWithJson(w, http.StatusOK, validResult)
+	helpers.ResponseWithJson(w, http.StatusOK, result{""})
 }
