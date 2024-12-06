@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/trantuvan/chirpy/helpers"
 )
@@ -15,6 +16,7 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 		CleanedBody string `json:"cleaned_body"`
 	}
 	const maxChirpLength = 140
+	profaneWords := []string{"kerfuffle", "sharbert", "fornax"}
 
 	defer r.Body.Close()
 	decoder := json.NewDecoder(r.Body)
@@ -30,5 +32,15 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	helpers.ResponseWithJson(w, http.StatusOK, result{""})
+	origins := strings.Split(params.Body, " ")
+
+	for i, w := range origins {
+		for _, pw := range profaneWords {
+			if strings.ToLower(w) == pw {
+				origins[i] = "****"
+			}
+		}
+	}
+
+	helpers.ResponseWithJson(w, http.StatusOK, result{strings.Join(origins, " ")})
 }
