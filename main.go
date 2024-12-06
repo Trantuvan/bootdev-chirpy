@@ -16,7 +16,9 @@ func main() {
 	apiConfig := apiConfig{}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /admin/healthz", handlerReadiness)
+	mux.HandleFunc("GET /api/healthz", handlerReadiness)
+	mux.HandleFunc("POST /api/validate_chirp", handlerChirpsValidate)
+
 	mux.HandleFunc("GET /admin/metrics", apiConfig.handlerMetrics)
 	mux.HandleFunc("POST /admin/reset", apiConfig.handlerReset)
 
