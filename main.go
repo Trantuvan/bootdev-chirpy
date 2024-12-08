@@ -16,6 +16,7 @@ import (
 type apiConfig struct {
 	fileserverHits atomic.Int32
 	db             *database.Queries
+	platform       string
 }
 
 func main() {
@@ -26,6 +27,12 @@ func main() {
 	}
 
 	dbURL := os.Getenv("DB_URL")
+	platform := os.Getenv("PLATFORM")
+
+	if dbURL == "" || platform == "" {
+		log.Fatal("DB_URL & PLATFORM must be set")
+	}
+
 	db, err := sql.Open("postgres", dbURL)
 
 	if err != nil {
