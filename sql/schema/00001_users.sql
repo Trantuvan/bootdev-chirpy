@@ -11,5 +11,5 @@ CREATE TABLE users(
 
 -- +goose Down
 -- +goose StatementBegin
-TRUNCATE TABLE users CASCADE;
+DROP TABLE users;
 -- +goose StatementEnd
