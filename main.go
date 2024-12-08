@@ -40,13 +40,18 @@ func main() {
 	}
 
 	const port string = "8080"
-	apiConfig := apiConfig{atomic.Int32{}, database.New(db)}
+	apiConfig := apiConfig{
+		fileserverHits: atomic.Int32{},
+		db:             database.New(db),
+		platform:       platform,
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/app/", apiConfig.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 
 	mux.HandleFunc("GET /api/healthz", handlerReadiness) // only GET
 	mux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
+	mux.HandleFunc("POST /api/users", apiConfig.handlerCreateUser)
 
 	mux.HandleFunc("GET /admin/metrics", apiConfig.handlerMetrics) // only GET
 	mux.HandleFunc("POST /admin/reset", apiConfig.handlerReset)    // only POST
