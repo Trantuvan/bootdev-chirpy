@@ -58,6 +58,38 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 	})
 }
 
+func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
+	type response struct {
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Body      string    `json:"body"`
+		UserId    uuid.UUID `json:"user_id"`
+	}
+
+	chirps, err := cfg.db.GetChirps(r.Context())
+
+	if err != nil {
+		helpers.ResponseWithError(w, http.StatusInternalServerError, fmt.Sprintf("handlerGetChirps: failed to get chirps %s\n", err), err)
+		return
+	}
+
+	//* map chirps to reponses
+	responses := make([]response, len(chirps))
+
+	for i, c := range chirps {
+		responses[i] = response{
+			ID:        c.ID,
+			CreatedAt: c.CreatedAt,
+			UpdatedAt: c.UpdatedAt,
+			Body:      c.Body,
+			UserId:    c.UserID,
+		}
+	}
+
+	helpers.ResponseWithJson(w, http.StatusOK, responses)
+}
+
 func validateChirp(msg string) (string, error) {
 	const maxChirpLength = 140
 	profaneWords := map[string]struct{}{
