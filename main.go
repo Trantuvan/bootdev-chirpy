@@ -52,6 +52,7 @@ func main() {
 	mux.HandleFunc("GET /api/healthz", handlerReadiness) // only GET
 	mux.HandleFunc("POST /api/users", apiConfig.handlerCreateUser)
 	mux.HandleFunc("POST /api/chirps", apiConfig.handlerCreateChirp)
+	mux.HandleFunc("GET /api/chirps", apiConfig.handlerGetChirps)
 
 	mux.HandleFunc("GET /admin/metrics", apiConfig.handlerMetrics) // only GET
 	mux.HandleFunc("POST /admin/reset", apiConfig.handlerReset)    // only POST
