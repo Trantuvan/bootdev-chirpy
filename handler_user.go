@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -8,11 +9,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/trantuvan/chirpy/helpers"
+	"github.com/trantuvan/chirpy/internal/auth"
+	"github.com/trantuvan/chirpy/internal/database"
 )
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	type parameter struct {
-		Email string `json:"email"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 	type response struct {
 		ID        uuid.UUID `json:"id"`
@@ -30,7 +34,17 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	user, err := cfg.db.CreateUser(r.Context(), params.Email)
+	hashedPass, err := auth.HashPassword(params.Password)
+
+	if err != nil {
+		helpers.ResponseWithError(w, http.StatusBadRequest, "handlerCreateUser: bad password", err)
+		return
+	}
+
+	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
+		Email:          params.Email,
+		HashedPassword: sql.NullString{String: hashedPass, Valid: err == nil},
+	})
 
 	if err != nil {
 		helpers.ResponseWithError(w, http.StatusInternalServerError, fmt.Sprintf("handlerCreateUser: failed to create user %s\n", err), err)
