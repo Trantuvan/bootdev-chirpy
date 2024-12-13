@@ -58,3 +58,44 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		Email:     user.Email,
 	})
 }
+
+func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {
+	type parameter struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	type response struct {
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Email     string    `json:"email"`
+	}
+
+	params := parameter{}
+	defer r.Body.Close()
+	decoder := json.NewDecoder(r.Body)
+
+	if err := decoder.Decode(&params); err != nil {
+		helpers.ResponseWithError(w, http.StatusInternalServerError, fmt.Sprintf("handlerLogin: failed to read params %s", err), err)
+		return
+	}
+
+	user, err := cfg.db.GetUserByEmail(r.Context(), params.Email)
+
+	if err != nil {
+		helpers.ResponseWithError(w, http.StatusBadRequest, fmt.Sprintf("handlerLogin: Incorrect email -  %s", params.Email), err)
+		return
+	}
+
+	if errPass := auth.CheckPasswordHash(params.Password, user.HashedPassword.String); errPass != nil {
+		helpers.ResponseWithError(w, http.StatusUnauthorized, "handlerLogin: Incorrect password", err)
+		return
+	}
+
+	helpers.ResponseWithJson(w, http.StatusOK, response{
+		ID:        user.ID,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		Email:     user.Email,
+	})
+}
