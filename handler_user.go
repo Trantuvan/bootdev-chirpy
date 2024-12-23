@@ -70,6 +70,7 @@ func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {
 		CreatedAt time.Time `json:"created_at"`
 		UpdatedAt time.Time `json:"updated_at"`
 		Email     string    `json:"email"`
+		token     string    `json:"token"`
 	}
 
 	params := parameter{}
@@ -99,10 +100,18 @@ func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token, errToken := auth.MakeJWT(user.ID, cfg.secretKey, *params.ExpiresAt)
+
+	if errToken != nil {
+		helpers.ResponseWithError(w, http.StatusUnauthorized, "handlerLogin: Invalid token", err)
+		return
+	}
+
 	helpers.ResponseWithJson(w, http.StatusOK, response{
 		ID:        user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		Email:     user.Email,
+		token:     token,
 	})
 }
