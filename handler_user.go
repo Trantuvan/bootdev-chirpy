@@ -61,8 +61,9 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 
 func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {
 	type parameter struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Email     string         `json:"email"`
+		Password  string         `json:"password"`
+		ExpiresAt *time.Duration `json:"expires_in_seconds"` //optional pointer allow nil
 	}
 	type response struct {
 		ID        uuid.UUID `json:"id"`
@@ -78,6 +79,12 @@ func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {
 	if err := decoder.Decode(&params); err != nil {
 		helpers.ResponseWithError(w, http.StatusInternalServerError, fmt.Sprintf("handlerLogin: failed to read params %s", err), err)
 		return
+	}
+
+	expiresAtDefault := time.Hour
+
+	if params.ExpiresAt == nil || *params.ExpiresAt > expiresAtDefault {
+		params.ExpiresAt = &expiresAtDefault
 	}
 
 	user, err := cfg.db.GetUserByEmail(r.Context(), params.Email)
