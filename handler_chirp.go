@@ -11,13 +11,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/trantuvan/chirpy/helpers"
+	"github.com/trantuvan/chirpy/internal/auth"
 	"github.com/trantuvan/chirpy/internal/database"
 )
 
 func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
 	type parameter struct {
-		Body   string    `json:"body"`
-		UserId uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
 	}
 	type response struct {
 		ID        uuid.UUID `json:"id"`
