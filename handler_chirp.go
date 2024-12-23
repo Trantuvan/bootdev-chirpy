@@ -27,6 +27,20 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 		UserId    uuid.UUID `json:"user_id"`
 	}
 
+	token, err := auth.GetBearerToken(r.Header)
+
+	if token == "" {
+		helpers.ResponseWithError(w, http.StatusUnauthorized, "there is no Authorization in headers", err)
+		return
+	}
+
+	userID, errJWT := auth.ValidateJWT(token, cfg.secretKey)
+
+	if errJWT != nil {
+		helpers.ResponseWithError(w, http.StatusUnauthorized, "failed to validate JWT", errJWT)
+		return
+	}
+
 	params := parameter{}
 	defer r.Body.Close()
 	decoder := json.NewDecoder(r.Body)
@@ -43,7 +57,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	chirp, err := cfg.db.CreateChirps(r.Context(), database.CreateChirpsParams{Body: cleanedChirp, UserID: params.UserId})
+	chirp, err := cfg.db.CreateChirps(r.Context(), database.CreateChirpsParams{Body: cleanedChirp, UserID: userID})
 
 	if err != nil {
 		helpers.ResponseWithError(w, http.StatusInternalServerError, fmt.Sprintf("handlerCreateChirp: failed to create chirp %s\n", err), err)
