@@ -1,6 +1,11 @@
 package auth
 
-import "testing"
+import (
+	"testing"
+	"time"
+
+	"github.com/google/uuid"
+)
 
 func TestCheckPasswordHash(t *testing.T) {
 	// First, we need to create some hashed passwords for testing
@@ -55,4 +60,28 @@ func TestCheckPasswordHash(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestValidateJWT(t *testing.T) {
+	t.Run("Valid JWT", func(t *testing.T) {
+		secretKey1 := "TestValidateJWT"
+		expectUUID := uuid.UUID{}
+		expectedToken, _ := MakeJWT(expectUUID, secretKey1, time.Second*2)
+		actualUUID, err := ValidateJWT(expectedToken, secretKey1)
+
+		if actualUUID.String() != expectUUID.String() {
+			t.Errorf("ValidateJWT() error = %v", err)
+		}
+	})
+	t.Run("InValid Secret key", func(t *testing.T) {
+		secretKey1 := "TestValidateJWT"
+		expectUUID := uuid.UUID{}
+		expiredTime := time.Duration(1 * time.Second)
+		expectedToken, _ := MakeJWT(expectUUID, "", expiredTime)
+		actualUUID, err := ValidateJWT(expectedToken, secretKey1)
+
+		if err == nil {
+			t.Errorf("ValidateJWT() expected err Invalid SecretKey but given userID %v", actualUUID.String())
+		}
+	})
 }
