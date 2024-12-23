@@ -70,7 +70,7 @@ func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {
 		CreatedAt time.Time `json:"created_at"`
 		UpdatedAt time.Time `json:"updated_at"`
 		Email     string    `json:"email"`
-		token     string    `json:"token"`
+		Token     string    `json:"token"`
 	}
 
 	params := parameter{}
@@ -112,6 +112,6 @@ func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		Email:     user.Email,
-		token:     token,
+		Token:     token,
 	})
 }
