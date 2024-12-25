@@ -31,8 +31,8 @@ func main() {
 	platform := os.Getenv("PLATFORM")
 	secretKey := os.Getenv("SECRET_KEY")
 
-	if dbURL == "" || platform == "" {
-		log.Fatal("DB_URL & PLATFORM must be set")
+	if dbURL == "" || platform == "" || secretKey == "" {
+		log.Fatal("DB_URL & PLATFORM & SECRET_KEY must be set")
 	}
 
 	db, err := sql.Open("postgres", dbURL)
