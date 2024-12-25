@@ -48,6 +48,9 @@ func GetBearerToken(headers http.Header) (string, error) {
 		return "", ErrNoAuthHeaderIncluded
 	}
 	tokens := strings.Split(token, " ")
+	if len(tokens) < 2 || tokens[0] != "Bearer" {
+		return "", ErrMalformedAuthHeader
+	}
 	return strings.Trim(tokens[1], " "), nil
 }
 
