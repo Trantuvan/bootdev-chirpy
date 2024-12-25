@@ -14,7 +14,18 @@ import (
 type chirpyClaims struct {
 	jwt.RegisteredClaims
 }
+type TokenType string
 
+// TokenTypeAccess -
+const TokenTypeAccess TokenType = "chirpy"
+
+// ErrNoAuthHeaderIncluded -
+var ErrNoAuthHeaderIncluded = errors.New("no auth header included in request")
+
+// ErrMalformedAuthHeader -
+var ErrMalformedAuthHeader = errors.New("malformed authorization header")
+
+// HashPassword -
 func HashPassword(password string) (string, error) {
 	hashedPass, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
@@ -25,19 +36,22 @@ func HashPassword(password string) (string, error) {
 	return string(hashedPass), err
 }
 
+// CheckPasswordHash -
 func CheckPasswordHash(password, hash string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 }
 
+// GetBearerToken -
 func GetBearerToken(headers http.Header) (string, error) {
 	token := headers.Get("Authorization")
 	if token == "" {
-		return "", errors.New("token does not exist in header")
+		return "", ErrNoAuthHeaderIncluded
 	}
 	tokens := strings.Split(token, " ")
 	return strings.Trim(tokens[1], " "), nil
 }
 
+// MakeJWT -
 func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
 	claims := chirpyClaims{
 		jwt.RegisteredClaims{
@@ -51,6 +65,7 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
 	return token.SignedString([]byte(tokenSecret))
 }
 
+// ValidateJWT -
 func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &chirpyClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(tokenSecret), nil
