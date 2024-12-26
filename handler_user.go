@@ -61,9 +61,9 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 
 func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {
 	type parameter struct {
-		Email     string         `json:"email"`
-		Password  string         `json:"password"`
-		ExpiresAt *time.Duration `json:"expires_in_seconds"` //optional pointer allow nil
+		Email     string `json:"email"`
+		Password  string `json:"password"`
+		ExpiresAt int    `json:"expires_in_seconds"` //optional pointer allow nil
 	}
 	type response struct {
 		ID        uuid.UUID `json:"id"`
@@ -82,10 +82,10 @@ func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	expiresAtDefault := time.Hour
+	expiresTime := time.Hour
 
-	if params.ExpiresAt == nil || *params.ExpiresAt > expiresAtDefault {
-		params.ExpiresAt = &expiresAtDefault
+	if params.ExpiresAt > 0 && params.ExpiresAt < 3600 {
+		expiresTime = time.Duration(params.ExpiresAt) * time.Second
 	}
 
 	user, err := cfg.db.GetUserByEmail(r.Context(), params.Email)
@@ -100,7 +100,7 @@ func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, errToken := auth.MakeJWT(user.ID, cfg.secretKey, *params.ExpiresAt)
+	token, errToken := auth.MakeJWT(user.ID, cfg.secretKey, expiresTime)
 
 	if errToken != nil {
 		helpers.ResponseWithError(w, http.StatusUnauthorized, "handlerLogin: Invalid token", err)
