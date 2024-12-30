@@ -1,12 +1,14 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/trantuvan/chirpy/helpers"
 	"github.com/trantuvan/chirpy/internal/auth"
+	"github.com/trantuvan/chirpy/internal/database"
 )
 
 func (cfg *apiConfig) handlerGetUserFromRefreshToken(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +25,7 @@ func (cfg *apiConfig) handlerGetUserFromRefreshToken(w http.ResponseWriter, r *h
 	token, err := cfg.db.GetRefreshTokenByToken(r.Context(), refreshToken)
 
 	if err != nil {
-		helpers.ResponseWithError(w, http.StatusUnauthorized, "GetUserFromRefreshToken: doesn't exist", err)
+		helpers.ResponseWithError(w, http.StatusUnauthorized, "GetUserFromRefreshToken: token doesn't exist", err)
 		return
 	}
 
