@@ -41,3 +41,25 @@ func (cfg *apiConfig) handlerGetUserFromRefreshToken(w http.ResponseWriter, r *h
 
 	helpers.ResponseWithJson(w, http.StatusOK, response{Token: tokenJWT})
 }
+
+func (cfg *apiConfig) handlderRevokeRefreshToken(w http.ResponseWriter, r *http.Request) {
+	refreshToken, err := auth.GetBearerToken(r.Header)
+
+	if err != nil {
+		helpers.ResponseWithError(w, http.StatusUnauthorized, fmt.Sprintf("RevokeRefreshToken: %s", err), err)
+		return
+	}
+
+	errRevokeToken := cfg.db.RevokeRefreshToken(r.Context(), database.RevokeRefreshTokenParams{
+		RevokedAt: sql.NullTime{Time: time.Now(), Valid: true},
+		UpdatedAt: time.Now(),
+		Token:     refreshToken,
+	})
+
+	if errRevokeToken != nil {
+		helpers.ResponseWithError(w, http.StatusInternalServerError, fmt.Sprintf("RevokeRefreshToken: %s", err), err)
+		return
+	}
+
+	helpers.ResponseWithJson(w, http.StatusNoContent, "revoke success")
+}
