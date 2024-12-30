@@ -110,7 +110,7 @@ func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cfg.db.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+	refreshToken, errRefreshToken := cfg.db.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
 		Token:     tokenRefresh,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -118,11 +118,17 @@ func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {
 		ExpiresAt: time.Now().Add(60 * 24 * time.Hour), // 60 days
 	})
 
+	if errRefreshToken != nil {
+		helpers.ResponseWithError(w, http.StatusUnauthorized, fmt.Sprintf("handlerLogin: failed to create token %s", errRefreshToken), errRefreshToken)
+		return
+	}
+
 	helpers.ResponseWithJson(w, http.StatusOK, response{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
-		Token:     tokenJWT,
+		ID:           user.ID,
+		CreatedAt:    user.CreatedAt,
+		UpdatedAt:    user.UpdatedAt,
+		Email:        user.Email,
+		Token:        tokenJWT,
+		RefreshToken: refreshToken.Token,
 	})
 }
