@@ -13,6 +13,8 @@ import (
 	"github.com/trantuvan/chirpy/internal/database"
 )
 
+const ExpiresTime = time.Second * 3600
+
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	type parameter struct {
 		Email    string `json:"email"`
@@ -61,16 +63,16 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 
 func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {
 	type parameter struct {
-		Email     string `json:"email"`
-		Password  string `json:"password"`
-		ExpiresAt int    `json:"expires_in_seconds"` //optional pointer allow nil
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 	type response struct {
-		ID        uuid.UUID `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Email     string    `json:"email"`
-		Token     string    `json:"token"`
+		ID           uuid.UUID `json:"id"`
+		CreatedAt    time.Time `json:"created_at"`
+		UpdatedAt    time.Time `json:"updated_at"`
+		Email        string    `json:"email"`
+		Token        string    `json:"token"`
+		RefreshToken string    `json:"refresh_token"`
 	}
 
 	params := parameter{}
@@ -80,12 +82,6 @@ func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {
 	if err := decoder.Decode(&params); err != nil {
 		helpers.ResponseWithError(w, http.StatusInternalServerError, fmt.Sprintf("handlerLogin: failed to read params %s", err), err)
 		return
-	}
-
-	expiresTime := time.Hour
-
-	if params.ExpiresAt > 0 && params.ExpiresAt < 3600 {
-		expiresTime = time.Duration(params.ExpiresAt) * time.Second
 	}
 
 	user, err := cfg.db.GetUserByEmail(r.Context(), params.Email)
@@ -100,18 +96,33 @@ func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, errToken := auth.MakeJWT(user.ID, cfg.secretKey, expiresTime)
+	tokenJWT, errTokenJWT := auth.MakeJWT(user.ID, cfg.secretKey, ExpiresTime)
 
-	if errToken != nil {
-		helpers.ResponseWithError(w, http.StatusUnauthorized, "handlerLogin: Invalid token", err)
+	if errTokenJWT != nil {
+		helpers.ResponseWithError(w, http.StatusUnauthorized, "handlerLogin: Invalid token JWT", errTokenJWT)
 		return
 	}
+
+	tokenRefresh, errRefresh := auth.MakeRefreshToken()
+
+	if errRefresh != nil {
+		helpers.ResponseWithError(w, http.StatusUnauthorized, "handlerLogin: Invalid token Refresh", errRefresh)
+		return
+	}
+
+	cfg.db.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		Token:     tokenRefresh,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID:    user.ID,
+		ExpiresAt: time.Now().Add(60 * 24 * time.Hour), // 60 days
+	})
 
 	helpers.ResponseWithJson(w, http.StatusOK, response{
 		ID:        user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		Email:     user.Email,
-		Token:     token,
+		Token:     tokenJWT,
 	})
 }
