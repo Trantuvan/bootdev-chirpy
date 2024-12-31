@@ -22,19 +22,14 @@ func (cfg *apiConfig) handlerGetUserFromRefreshToken(w http.ResponseWriter, r *h
 		return
 	}
 
-	token, err := cfg.db.GetRefreshTokenByToken(r.Context(), refreshToken)
+	user, err := cfg.db.GetUserFromRefreshToken(r.Context(), refreshToken)
 
 	if err != nil {
 		helpers.ResponseWithError(w, http.StatusUnauthorized, "GetUserFromRefreshToken: token doesn't exist", err)
 		return
 	}
 
-	if expiresDuration := token.ExpiresAt.Sub(token.UpdatedAt); expiresDuration > 60*24*time.Hour {
-		helpers.ResponseWithError(w, http.StatusUnauthorized, "GetUserFromRefreshToken: refresh token exceeds 60 days", nil)
-		return
-	}
-
-	tokenJWT, errJWT := auth.MakeJWT(token.UserID, cfg.secretKey, ExpiresTime)
+	tokenJWT, errJWT := auth.MakeJWT(user.ID, cfg.secretKey, ExpiresTime)
 
 	if errJWT != nil {
 		helpers.ResponseWithError(w, http.StatusUnauthorized, "GetUserFromRefreshToken: Invalid token JWT", errJWT)
