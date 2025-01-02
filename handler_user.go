@@ -61,6 +61,62 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
+func (cfg *apiConfig) handlerUpdateUserEmailPassword(w http.ResponseWriter, r *http.Request) {
+	type parameter struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	type response struct {
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Email     string    `json:"email"`
+	}
+
+	tokenJWT, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		helpers.ResponseWithError(w, http.StatusUnauthorized, fmt.Sprintf("UpdateUserEmailPassword: %s", err), err)
+		return
+	}
+
+	userID, err := auth.ValidateJWT(tokenJWT, cfg.secretKey)
+	if err != nil {
+		helpers.ResponseWithError(w, http.StatusUnauthorized, fmt.Sprintf("UpdateUserEmailPassword: %s", err), err)
+		return
+	}
+
+	params := parameter{}
+	defer r.Body.Close()
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&params); err != nil {
+		helpers.ResponseWithError(w, http.StatusUnauthorized, fmt.Sprintf("UpdateUserEmailPassword: failed to read params %s", err), err)
+		return
+	}
+
+	hasedPass, err := auth.HashPassword(params.Password)
+	if err != nil {
+		helpers.ResponseWithError(w, http.StatusBadRequest, fmt.Sprintf("UpdateUserEmailPassword: bad password %s", err), err)
+		return
+	}
+
+	updatedUser, err := cfg.db.UpdateUserEmailPassword(r.Context(), database.UpdateUserEmailPasswordParams{
+		Email:          params.Email,
+		HashedPassword: sql.NullString{String: hasedPass, Valid: err != nil},
+		ID:             userID,
+	})
+	if err != nil {
+		helpers.ResponseWithError(w, http.StatusInternalServerError, fmt.Sprintf("UpdateUserEmailPassword: failed to update user %s", err), err)
+		return
+	}
+
+	helpers.ResponseWithJson(w, http.StatusOK, response{
+		ID:        updatedUser.ID,
+		CreatedAt: updatedUser.UpdatedAt,
+		UpdatedAt: updatedUser.UpdatedAt,
+		Email:     updatedUser.Email,
+	})
+}
+
 func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {
 	type parameter struct {
 		Email    string `json:"email"`
