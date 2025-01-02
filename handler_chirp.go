@@ -73,6 +73,44 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 	})
 }
 
+func (cfg *apiConfig) handlerDeleteChirp(w http.ResponseWriter, r *http.Request) {
+	chirpID, err := uuid.Parse(r.PathValue("chirpID"))
+	if err != nil {
+		helpers.ResponseWithError(w, http.StatusBadRequest, fmt.Sprintf("handlerDeleteChirp: %s", err), err)
+		return
+	}
+
+	tokenJWT, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		helpers.ResponseWithError(w, http.StatusUnauthorized, fmt.Sprintf("handlerDeleteChirp: %s", err), err)
+		return
+	}
+
+	userID, err := auth.ValidateJWT(tokenJWT, cfg.secretKey)
+	if err != nil {
+		helpers.ResponseWithError(w, http.StatusUnauthorized, fmt.Sprintf("handlerDeleteChirp: %s", err), err)
+		return
+	}
+
+	chirp, err := cfg.db.GetChirp(r.Context(), chirpID)
+	if err == sql.ErrNoRows {
+		helpers.ResponseWithError(w, http.StatusNotFound, fmt.Sprintf("handlerDeleteChirp: chirp with ID - %s not exist", chirpID), err)
+		return
+	}
+	if chirp.UserID != userID {
+		helpers.ResponseWithError(w, http.StatusForbidden, fmt.Sprintf("handlerDeleteChirp: chirp ID - %s not belong to userID - %s", chirpID, userID), nil)
+		return
+	}
+
+	errDel := cfg.db.DeleteChirpByID(r.Context(), database.DeleteChirpByIDParams{ID: chirpID, UserID: userID})
+	if errDel != nil {
+		helpers.ResponseWithError(w, http.StatusInternalServerError, fmt.Sprintf("handlerDeleteChirp: failed to del chirpID - %s", chirpID), err)
+		return
+	}
+
+	helpers.ResponseWithJson(w, http.StatusNoContent, nil)
+}
+
 func (cfg *apiConfig) handlerGetChirp(w http.ResponseWriter, r *http.Request) {
 	type response struct {
 		ID        uuid.UUID `json:"id"`
