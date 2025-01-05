@@ -57,6 +57,19 @@ func GetBearerToken(headers http.Header) (string, error) {
 	return strings.Trim(tokens[1], " "), nil
 }
 
+// GetApiKey -
+func GetApiKey(headers http.Header) (string, error) {
+	apiKey := headers.Get("Authorization")
+	if apiKey == "" {
+		return "", ErrNoAuthHeaderIncluded
+	}
+	apiKeys := strings.Split(apiKey, " ")
+	if len(apiKeys) < 2 || apiKeys[0] != "ApiKey" {
+		return "", ErrMalformedAuthHeader
+	}
+	return strings.Trim(apiKeys[1], " "), nil
+}
+
 // MakeJWT -
 func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
 	claims := chirpyClaims{

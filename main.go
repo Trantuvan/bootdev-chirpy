@@ -18,6 +18,7 @@ type apiConfig struct {
 	db             *database.Queries
 	platform       string
 	secretKey      string
+	polkaKey       string
 }
 
 func main() {
@@ -30,9 +31,10 @@ func main() {
 	dbURL := os.Getenv("DB_URL")
 	platform := os.Getenv("PLATFORM")
 	secretKey := os.Getenv("SECRET_KEY")
+	polkaKey := os.Getenv("POLKA_KEY")
 
-	if dbURL == "" || platform == "" || secretKey == "" {
-		log.Fatal("DB_URL & PLATFORM & SECRET_KEY must be set")
+	if dbURL == "" || platform == "" || secretKey == "" || polkaKey == "" {
+		log.Fatal("DB_URL & PLATFORM & SECRET_KEY & polkaKey must be set")
 	}
 
 	db, err := sql.Open("postgres", dbURL)
@@ -47,6 +49,7 @@ func main() {
 		db:             database.New(db),
 		platform:       platform,
 		secretKey:      secretKey,
+		polkaKey:       polkaKey,
 	}
 
 	mux := http.NewServeMux()

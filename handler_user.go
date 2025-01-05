@@ -136,6 +136,18 @@ func (cfg *apiConfig) handlerUpdateUserToChirpyRed(w http.ResponseWriter, r *htt
 			UserID string `json:"user_id"`
 		} `json:"data"`
 	}
+
+	apiKey, errApiKey := auth.GetApiKey(r.Header)
+	if errApiKey != nil {
+		helpers.ResponseWithError(w, http.StatusUnauthorized, fmt.Sprintf("handlerUpdateUserToChirpyRed: %s", errApiKey), errApiKey)
+		return
+	}
+
+	if apiKey != cfg.polkaKey {
+		helpers.ResponseWithError(w, http.StatusUnauthorized, "handlerUpdateUserToChirpyRed: Unauthoried", nil)
+		return
+	}
+
 	params := parameter{}
 	defer r.Body.Close()
 	decoder := json.NewDecoder(r.Body)
