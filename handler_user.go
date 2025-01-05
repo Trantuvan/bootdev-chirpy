@@ -117,11 +117,55 @@ func (cfg *apiConfig) handlerUpdateUserEmailPassword(w http.ResponseWriter, r *h
 	}
 
 	helpers.ResponseWithJson(w, http.StatusOK, response{
-		ID:        updatedUser.ID,
-		CreatedAt: updatedUser.UpdatedAt,
-		UpdatedAt: updatedUser.UpdatedAt,
-		Email:     updatedUser.Email,
+		User: User{
+			ID:          updatedUser.ID,
+			CreatedAt:   updatedUser.UpdatedAt,
+			UpdatedAt:   updatedUser.UpdatedAt,
+			Email:       updatedUser.Email,
+			IsChirpyRed: updatedUser.IsChirpyRed,
+		},
 	})
+}
+
+func (cfg *apiConfig) handlerUpdateUserToChirpyRed(w http.ResponseWriter, r *http.Request) {
+	const WEBHOOK_EVENT string = "user.upgraded"
+
+	type parameter struct {
+		Event string `json:"event"`
+		Data  struct {
+			UserID string `json:"user_id"`
+		} `json:"data"`
+	}
+	params := parameter{}
+	defer r.Body.Close()
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&params); err != nil {
+		helpers.ResponseWithError(w, http.StatusInternalServerError, fmt.Sprintf("handlerUpdateUserToChirpyRed: failed to read params %s", err), err)
+		return
+	}
+
+	if params.Event != WEBHOOK_EVENT {
+		helpers.ResponseWithError(w, http.StatusNoContent, "handlerUpdateUserToChirpyRed: webhooks.event != 'user.upgraded'", nil)
+		return
+	}
+
+	userID, err := uuid.Parse(params.Data.UserID)
+	if err != nil {
+		helpers.ResponseWithError(w, http.StatusBadRequest, fmt.Sprintf("handlerUpdateUserToChirpyRed: failed to parse UserID - %s", params.Data.UserID), err)
+		return
+	}
+
+	errUpdateChiryRed := cfg.db.UpdateUserToChirpyRed(r.Context(), userID)
+	if errUpdateChiryRed == sql.ErrNoRows {
+		helpers.ResponseWithError(w, http.StatusNotFound, fmt.Sprintf("handlerUpdateUserToChirpyRed: failed to find UserID - %s", params.Data.UserID), errUpdateChiryRed)
+		return
+	}
+	if errUpdateChiryRed != nil {
+		helpers.ResponseWithError(w, http.StatusInternalServerError, fmt.Sprintf("handlerUpdateUserToChirpyRed: failed to upgrade user - %s", params.Data.UserID), errUpdateChiryRed)
+		return
+	}
+
+	helpers.ResponseWithJson(w, http.StatusNoContent, nil)
 }
 
 func (cfg *apiConfig) hanlderLogin(w http.ResponseWriter, r *http.Request) {

@@ -57,6 +57,7 @@ func main() {
 	mux.HandleFunc("POST /api/revoke", apiConfig.handlderRevokeRefreshToken)
 	mux.HandleFunc("POST /api/users", apiConfig.handlerCreateUser)
 	mux.HandleFunc("PUT /api/users", apiConfig.handlerUpdateUserEmailPassword)
+	mux.HandleFunc("POST /api/polka/webhooks", apiConfig.handlerUpdateUserToChirpyRed)
 	mux.HandleFunc("POST /api/login", apiConfig.hanlderLogin)
 	mux.HandleFunc("POST /api/chirps", apiConfig.handlerCreateChirp)
 	mux.HandleFunc("GET /api/chirps", apiConfig.handlerGetChirps)
