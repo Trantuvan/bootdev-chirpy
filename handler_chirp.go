@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -151,6 +152,8 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 		UserId    uuid.UUID `json:"user_id"`
 	}
 
+	sortQueryParam := r.URL.Query().Get("sort")
+
 	if authorQueryParam := r.URL.Query().Get("author_id"); authorQueryParam != "" {
 		userID, err := uuid.Parse(authorQueryParam)
 		if err != nil {
@@ -162,6 +165,15 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			helpers.ResponseWithError(w, http.StatusInternalServerError, fmt.Sprintf("handlerGetChirps: failed to get chirps of userID %s\n", authorQueryParam), err)
 			return
+		}
+
+		if sortQueryParam != "" && sortQueryParam == "desc" {
+			// *func(i, j int) bool; Ask i < j true ?
+			// *note order j index 0, i index 1
+			// *if true swap i index 0, j index 1
+			sort.Slice(chirps, func(i, j int) bool {
+				return chirps[i].CreatedAt.After(chirps[j].CreatedAt)
+			})
 		}
 
 		//* map chirps to reponses
@@ -186,6 +198,12 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		helpers.ResponseWithError(w, http.StatusInternalServerError, fmt.Sprintf("handlerGetChirps: failed to get chirps %s\n", err), err)
 		return
+	}
+
+	if sortQueryParam != "" && sortQueryParam == "desc" {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].CreatedAt.After(chirps[j].CreatedAt)
+		})
 	}
 
 	//* map chirps to reponses
