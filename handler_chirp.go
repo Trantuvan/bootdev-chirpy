@@ -151,16 +151,16 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 		UserId    uuid.UUID `json:"user_id"`
 	}
 
-	if queryParam := r.URL.Query().Get("author_id"); queryParam != "" {
-		userID, err := uuid.Parse(queryParam)
+	if authorQueryParam := r.URL.Query().Get("author_id"); authorQueryParam != "" {
+		userID, err := uuid.Parse(authorQueryParam)
 		if err != nil {
-			helpers.ResponseWithError(w, http.StatusBadRequest, fmt.Sprintf("handlerGetChirps: failed parse userID %s\n", queryParam), err)
+			helpers.ResponseWithError(w, http.StatusBadRequest, fmt.Sprintf("handlerGetChirps: failed parse userID %s\n", authorQueryParam), err)
 			return
 		}
 
 		chirps, err := cfg.db.GetChirpsByUserID(r.Context(), userID)
 		if err != nil {
-			helpers.ResponseWithError(w, http.StatusInternalServerError, fmt.Sprintf("handlerGetChirps: failed to get chirps of userID %s\n", queryParam), err)
+			helpers.ResponseWithError(w, http.StatusInternalServerError, fmt.Sprintf("handlerGetChirps: failed to get chirps of userID %s\n", authorQueryParam), err)
 			return
 		}
 
